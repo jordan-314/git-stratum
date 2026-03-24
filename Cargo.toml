@@ -7,7 +7,10 @@ edition = "2024"
 chrono = "0.4.44"
 git2 = { version = "0.20.4", features = ["https", "ssh"] }
 openssl = { version = "0.10", features = ["vendored"] }
+thiserror = "2.0.18"
 
 [dev-dependencies]
 mockall = "0.14.0"
 sha1 = "0.10.6"
+tempfile = "3.27.0"
+todo = "0.3.0"
