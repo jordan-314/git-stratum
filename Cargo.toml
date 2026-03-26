@@ -17,6 +17,7 @@ edition = "2024"
 
 [dependencies]
 chrono = "0.4.44"
+git-url-parse = "0.6.0"
 git2 = { version = "0.20.4", features = ["https", "ssh"] }
 openssl = { version = "0.10", features = ["vendored"] }
 thiserror = "2.0.18"
