@@ -1,21 +1,24 @@
 // Integration tests associated with repository.rs
 
 mod common;
+
 use common::make_repo;
 
-use stratum::{MinedActor, MinedCommit, Repository, repository::RepositoryMiner};
+use stratum::{Local, Repository};
+//TODO: Should I bother with traits given the import overhead on the user?
+use stratum::{actor::MinedActor, commit::MinedCommit};
 
 #[test]
 fn init_repo_from_path() {
     let repo_path = make_repo();
-    Repository::from_path(repo_path.path().to_str().unwrap()).expect("Failed to open as repo");
+    Repository::<Local>::new(repo_path.path().to_str().unwrap()).expect("Failed to open as repo");
 }
 
 #[test]
 fn test_commit_traversal() {
     let repo_path = make_repo();
-    let repo =
-        Repository::from_path(repo_path.path().to_str().unwrap()).expect("Failed to open as repo");
+    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
+        .expect("Failed to open as repo");
 
     // Expecting an iter of length one
     let iter = repo.iter_commits().expect("Iterator Error");
