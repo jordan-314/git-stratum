@@ -54,3 +54,37 @@ pub fn clone_ssh(repo: &str, dest: &Path) -> Result<git2::Repository, Error> {
     // Clone the project.
     builder.clone(repo, dest).map_err(Error::Git)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn url_factory() -> GitUrl {
+        GitUrl::parse("https://github.com/jordan-314/git-stratum")
+            .expect("Failed to parse valid URL")
+    }
+
+    #[test]
+    fn test_known_dest_resolution() {
+        let url = url_factory();
+        let expected_path = std::env::current_dir().expect("Failed to get CWD");
+
+        assert_eq!(
+            resolve_destination(&url, Some(&expected_path)),
+            expected_path
+        );
+    }
+
+    #[test]
+    fn test_unknown_dest_resolution() {
+        let url = url_factory();
+        let expected_path = PathBuf::from_str("/tmp/git-stratum").unwrap();
+
+        assert_eq!(resolve_destination(&url, None::<&str>), expected_path);
+    }
+
+    #[test]
+    fn test_ssh_clone() {
+        todo!()
+    }
+}
