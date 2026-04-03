@@ -5,8 +5,6 @@ mod common;
 use common::make_repo;
 
 use stratum::{Local, Repository};
-//TODO: Should I bother with traits given the import overhead on the user?
-use stratum::{actor::MinedActor, commit::MinedCommit};
 
 #[test]
 fn init_repo_from_path() {
@@ -28,7 +26,7 @@ fn test_commit_traversal() {
         assert_eq!(commit.msg(), Some(common::EXPECTED_MSG.to_string()));
 
         assert!(!commit.is_merge());
-        assert_eq!(commit.parents(), None);
+        assert!(commit.parents().is_empty());
         // Check author equivalence
         assert_eq!(
             commit.author().name(),
