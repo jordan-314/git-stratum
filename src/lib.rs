@@ -4,6 +4,7 @@ use thiserror::Error;
 
 pub mod actor;
 pub mod commit;
+mod interface;
 pub mod repository;
 
 pub use actor::Actor;

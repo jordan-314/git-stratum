@@ -21,13 +21,14 @@ impl<'a> Commit<'a> {
         self.inner.message().map(|s| s.to_string())
     }
 
+    //TODO: Inject dependancy into Commit to keep generic?
     /// Return the commit author
-    pub fn author(&'a self) -> Actor<'a> {
+    pub fn author(&self) -> Actor<git2::Signature<'_>> {
         Actor::new(self.inner.author())
     }
 
     /// Return the commit committer
-    pub fn committer(&'a self) -> Actor<'a> {
+    pub fn committer(&self) -> Actor<git2::Signature<'_>> {
         Actor::new(self.inner.committer())
     }
 
