@@ -2,14 +2,16 @@ use chrono::{DateTime, Utc};
 use git2::Signature;
 
 /// A git actor who exists for the inspected repository
-pub struct Actor<'a> {
-    inner: Signature<'a>,
+pub struct Actor {
+    inner: Signature<'static>,
 }
 
-impl<'a> Actor<'a> {
+impl Actor {
     /// Instantiate a new Actor from their signature
-    pub fn new(signature: Signature<'a>) -> Self {
-        Self { inner: signature }
+    pub fn new(signature: Signature<'_>) -> Self {
+        Self {
+            inner: signature.to_owned(),
+        }
     }
 
     /// Return the actors name if it exists

@@ -2,13 +2,13 @@
 use git_url_parse::GitUrlParseError;
 use thiserror::Error;
 
-pub mod actor;
-pub mod commit;
-pub mod repository;
+mod domain;
+mod repository;
+mod url;
 
-pub use actor::Actor;
-pub use commit::Commit;
+pub use domain::{actor::Actor, commit::Commit};
 pub use repository::{Local, Remote, Repository};
+pub use url::GitUrl;
 
 #[derive(Debug, Error)]
 pub enum Error {

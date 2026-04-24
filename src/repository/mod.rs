@@ -1,13 +1,11 @@
 use std::{marker::PhantomData, path::Path};
 
-use crate::{Commit, Error};
-use git_url_parse::GitUrl;
-use git2;
+use crate::{Commit, Error, GitUrl};
 
 mod iter;
 use iter::CommitIterator;
 
-mod remote_utils;
+mod utils;
 
 pub struct Remote;
 pub struct Local;
@@ -20,8 +18,7 @@ pub struct Local;
 /// upon instantiation will be cloned and returned as a Local variant such that it
 /// can be mined.
 pub struct Repository<Location = Local> {
-    #[allow(dead_code)]
-    git_repo: git2::Repository,
+    repo: git2::Repository,
     location: PhantomData<Location>,
 }
 
@@ -37,16 +34,13 @@ impl Repository<Local> {
 
         let git_repo = git2::Repository::open(path).map_err(Error::Git)?;
         Ok(Self {
-            git_repo,
+            repo: git_repo,
             location: PhantomData::<Local>,
         })
     }
 
-    #[allow(dead_code)]
-    pub fn iter_commits(
-        &'_ self,
-    ) -> Result<impl Iterator<Item = Result<Commit<'_>, Error>>, Error> {
-        CommitIterator::new(&self.git_repo)
+    pub fn iter_commits(&self) -> Result<impl Iterator<Item = Result<Commit<'_>, Error>>, Error> {
+        CommitIterator::new(&self.repo)
     }
 }
 
@@ -60,7 +54,7 @@ impl Repository<Remote> {
     where
         P: AsRef<Path>,
     {
-        let git_url = GitUrl::parse(url).map_err(Error::GitUrlError)?;
+        let git_url = GitUrl::parse(url)?;
         // If ok_or block is hit, then scheme is None, hence pass string version
         // of None for a useful error message
         let scheme = git_url
@@ -81,30 +75,22 @@ impl Repository<Remote> {
         P: AsRef<Path>,
     {
         // Don't shadow url, slice needed to clone repo
-        let git_url = GitUrl::parse(url).map_err(Error::GitUrlError)?;
-        let dest = remote_utils::resolve_destination(&git_url, dest);
+        let git_url = GitUrl::parse(url)?;
+        let dest = utils::resolve_destination(&git_url, dest);
 
         let git_repo = git2::Repository::clone(url, dest).map_err(Error::Git)?;
 
         Ok(Repository {
-            git_repo,
+            repo: git_repo,
             location: PhantomData::<Local>,
         })
     }
 
-    pub fn from_ssh<P>(url: &str, dest: Option<P>) -> Result<Repository<Local>, Error>
+    pub fn from_ssh<P>(_url: &str, _dest: Option<P>) -> Result<Repository<Local>, Error>
     where
         P: AsRef<Path>,
     {
-        let git_url = GitUrl::parse(url).map_err(Error::GitUrlError)?;
-        let dest = remote_utils::resolve_destination(&git_url, dest);
-
-        let git_repo = remote_utils::clone_ssh(url, &dest)?;
-
-        Ok(Repository {
-            git_repo,
-            location: PhantomData::<Local>,
-        })
+        todo!("Decide how best to clone.")
     }
 }
 

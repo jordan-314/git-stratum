@@ -1,4 +1,5 @@
-use crate::actor::Actor;
+use crate::Actor;
+// use crate::Error;
 
 /// A singular git commit for the repository being inspected
 pub struct Commit<'a> {
@@ -7,8 +8,10 @@ pub struct Commit<'a> {
 
 impl<'a> Commit<'a> {
     /// Instantiate a new Commit object from a git2 commit
-    pub fn new(inner: git2::Commit<'a>) -> Self {
-        Self { inner }
+    pub fn new(commit: git2::Commit<'a>) -> Self {
+        Self {
+            inner: commit.to_owned(),
+        }
     }
 
     /// Return the commit hash
@@ -22,12 +25,12 @@ impl<'a> Commit<'a> {
     }
 
     /// Return the commit author
-    pub fn author(&'a self) -> Actor<'a> {
+    pub fn author(&self) -> Actor {
         Actor::new(self.inner.author())
     }
 
     /// Return the commit committer
-    pub fn committer(&'a self) -> Actor<'a> {
+    pub fn committer(&self) -> Actor {
         Actor::new(self.inner.committer())
     }
 

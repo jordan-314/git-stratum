@@ -1,19 +1,19 @@
 // Define any and all iterators relating to the repository class.
+use crate::Commit;
 use crate::Error;
-use crate::commit::Commit;
 
 //TODO: This should probably run on generics rather than git2::Commit
 /// Define state to keep track of during commit iteration
-pub struct CommitIterator<'iter> {
-    repo: &'iter git2::Repository,
-    walker: git2::Revwalk<'iter>,
+pub struct CommitIterator<'a> {
+    repo: &'a git2::Repository,
+    walker: git2::Revwalk<'a>,
 }
 
-impl<'iter> CommitIterator<'iter> {
-    pub fn new(repo: &'iter git2::Repository) -> Result<Self, Error> {
-        let mut walker = repo.revwalk().map_err(Error::Git)?;
+impl<'a> CommitIterator<'a> {
+    pub fn new(repo: &'a git2::Repository) -> Result<Self, Error> {
+        let mut walker = repo.revwalk()?;
         //TODO: Allow pushing of any arbitrary commit
-        walker.push_head().map_err(Error::Git)?;
+        walker.push_head()?;
 
         Ok(Self { repo, walker })
     }

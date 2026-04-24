@@ -50,7 +50,8 @@ mod test {
     fn test_parse() {
         assert!(GitUrl::parse("https://server.example/owner/git-stratum.git").is_ok());
         assert!(GitUrl::parse("git@server.example:owner/git-stratum.git").is_ok());
-        assert!(GitUrl::parse("rubbish-url$@./").is_err())
+        assert!(GitUrl::parse("rubbish-url$@./").is_err());
+        assert!(GitUrl::parse("https://server.example").is_err());
     }
 
     #[test]
