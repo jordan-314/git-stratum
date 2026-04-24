@@ -47,7 +47,7 @@ fn test_commit_traversal() {
         .expect("Failed to open as repo");
 
     // Expecting an iter of length one
-    let iter = repo.iter_commits().expect("Iterator Error");
+    let iter = repo.traverse_commits().expect("Iterator Error");
     for commit in iter {
         let commit = commit.expect("Expected a valid stratum commit");
         run_test_for_repo_head(&commit);

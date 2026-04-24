@@ -41,19 +41,25 @@ impl Repository<Local> {
         &self.repo
     }
 
-    /// Iterate over the reposiotries commit graph
-    pub fn iter_commits(&self) -> Result<impl Iterator<Item = Result<Commit<'_>, Error>>, Error> {
+    /// Traverse the repositories commit graph from HEAD
+    pub fn traverse_commits(
+        &self,
+    ) -> Result<impl Iterator<Item = Result<Commit<'_>, Error>>, Error> {
         let mut walker = self.raw().revwalk().map_err(Error::Git)?;
         walker.push_head().map_err(Error::Git)?;
+        self.iterate_walker(walker)
+    }
 
-        Ok(walker.map(|result| {
-            result.map_err(Error::Git).and_then(|oid| {
-                self.raw()
-                    .find_commit(oid)
-                    .map_err(Error::Git)
-                    .map(|git_commit| Commit::new(git_commit, self))
-            })
-        }))
+    /// Traverse the repositories commit graph from a specified commit hash
+    pub fn traverse_from(
+        &self,
+        oid: &str,
+    ) -> Result<impl Iterator<Item = Result<Commit<'_>, Error>>, Error> {
+        let oid = git2::Oid::from_str(oid).map_err(Error::Git)?;
+
+        let mut walker = self.raw().revwalk().map_err(Error::Git)?;
+        walker.push(oid).map_err(Error::Git)?;
+        self.iterate_walker(walker)
     }
 
     /// Return head as a stratum commit
@@ -74,6 +80,20 @@ impl Repository<Local> {
             .find_commit(git2::Oid::from_str(oid).map_err(Error::Git)?)
             .map_err(Error::Git)?;
         Ok(Commit::new(git_commit, self))
+    }
+
+    fn iterate_walker(
+        &self,
+        walker: git2::Revwalk<'_>,
+    ) -> Result<impl Iterator<Item = Result<Commit<'_>, Error>>, Error> {
+        Ok(walker.map(|result| {
+            result.map_err(Error::Git).and_then(|oid| {
+                self.raw()
+                    .find_commit(oid)
+                    .map_err(Error::Git)
+                    .map(|git_commit| Commit::new(git_commit, self))
+            })
+        }))
     }
 }
 
