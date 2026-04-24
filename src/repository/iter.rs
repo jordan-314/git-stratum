@@ -2,7 +2,6 @@
 use crate::Commit;
 use crate::Error;
 
-//TODO: This should probably run on generics rather than git2::Commit
 /// Define state to keep track of during commit iteration
 pub struct CommitIterator<'a> {
     repo: &'a git2::Repository,
@@ -11,9 +10,9 @@ pub struct CommitIterator<'a> {
 
 impl<'a> CommitIterator<'a> {
     pub fn new(repo: &'a git2::Repository) -> Result<Self, Error> {
-        let mut walker = repo.revwalk()?;
+        let mut walker = repo.revwalk().map_err(Error::Git)?;
         //TODO: Allow pushing of any arbitrary commit
-        walker.push_head()?;
+        walker.push_head().map_err(Error::Git)?;
 
         Ok(Self { repo, walker })
     }

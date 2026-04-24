@@ -39,8 +39,34 @@ impl Repository<Local> {
         })
     }
 
+    /// Read access into the underlying git2 object
+    pub fn raw(&self) -> &git2::Repository {
+        &self.repo
+    }
+
+    /// Iterate over the reposiotries commit graph
     pub fn iter_commits(&self) -> Result<impl Iterator<Item = Result<Commit<'_>, Error>>, Error> {
         CommitIterator::new(&self.repo)
+    }
+
+    /// Return head as a stratum commit
+    pub fn head(&self) -> Result<Commit<'_>, Error> {
+        let head = self
+            .repo
+            .head()
+            .map_err(Error::Git)?
+            .peel_to_commit()
+            .map_err(Error::Git)?;
+        Ok(Commit::new(head))
+    }
+
+    /// Return a single commit object based on a given oid/hash
+    pub fn single(&self, oid: &str) -> Result<Commit<'_>, Error> {
+        let git_commit = self
+            .repo
+            .find_commit(git2::Oid::from_str(oid).map_err(Error::Git)?)
+            .map_err(Error::Git)?;
+        Ok(Commit::new(git_commit))
     }
 }
 
