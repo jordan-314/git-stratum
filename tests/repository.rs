@@ -11,7 +11,7 @@ fn run_test_for_repo_head(commit: &Commit<'_>) {
     assert_eq!(commit.msg(), Some(common::EXPECTED_MSG.to_string()));
 
     assert!(!commit.is_merge());
-    assert!(commit.parents().is_empty());
+    assert!(commit.parents().collect::<Vec<String>>().is_empty());
     // Check author equivalence
     assert_eq!(
         commit.author().name(),
@@ -81,4 +81,44 @@ fn test_single() {
     let commit = repo.single(&head_hash).expect("Expected valid hash string");
 
     run_test_for_repo_head(&commit);
+}
+
+#[test]
+fn test_insertions() {
+    let repo_path = make_repo();
+    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
+        .expect("Failed to open as repo");
+
+    let head = repo.head().expect("Failed to create HEAD commit");
+    assert_eq!(head.insertions(&repo).unwrap(), 1)
+}
+
+#[test]
+fn test_deletions() {
+    let repo_path = make_repo();
+    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
+        .expect("Failed to open as repo");
+
+    let head = repo.head().expect("Failed to create HEAD commit");
+    assert_eq!(head.deletions(&repo).unwrap(), 0)
+}
+
+#[test]
+fn test_lines() {
+    let repo_path = make_repo();
+    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
+        .expect("Failed to open as repo");
+
+    let head = repo.head().expect("Failed to create HEAD commit");
+    assert_eq!(head.lines(&repo).unwrap(), 1)
+}
+
+#[test]
+fn test_files_changed() {
+    let repo_path = make_repo();
+    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
+        .expect("Failed to open as repo");
+
+    let head = repo.head().expect("Failed to create HEAD commit");
+    assert_eq!(head.files(&repo).unwrap(), 1)
 }
