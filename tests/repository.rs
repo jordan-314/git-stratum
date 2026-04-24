@@ -90,7 +90,7 @@ fn test_insertions() {
         .expect("Failed to open as repo");
 
     let head = repo.head().expect("Failed to create HEAD commit");
-    assert_eq!(head.insertions(&repo).unwrap(), 1)
+    assert_eq!(head.insertions().unwrap(), 1)
 }
 
 #[test]
@@ -100,7 +100,7 @@ fn test_deletions() {
         .expect("Failed to open as repo");
 
     let head = repo.head().expect("Failed to create HEAD commit");
-    assert_eq!(head.deletions(&repo).unwrap(), 0)
+    assert_eq!(head.deletions().unwrap(), 0)
 }
 
 #[test]
@@ -110,7 +110,7 @@ fn test_lines() {
         .expect("Failed to open as repo");
 
     let head = repo.head().expect("Failed to create HEAD commit");
-    assert_eq!(head.lines(&repo).unwrap(), 1)
+    assert_eq!(head.lines().unwrap(), 1)
 }
 
 #[test]
@@ -120,5 +120,5 @@ fn test_files_changed() {
         .expect("Failed to open as repo");
 
     let head = repo.head().expect("Failed to create HEAD commit");
-    assert_eq!(head.files(&repo).unwrap(), 1)
+    assert_eq!(head.files().unwrap(), 1)
 }

@@ -2,9 +2,6 @@ use std::{marker::PhantomData, path::Path};
 
 use crate::{Commit, Error, GitUrl};
 
-mod iter;
-use iter::CommitIterator;
-
 mod utils;
 
 pub struct Remote;
@@ -46,7 +43,17 @@ impl Repository<Local> {
 
     /// Iterate over the reposiotries commit graph
     pub fn iter_commits(&self) -> Result<impl Iterator<Item = Result<Commit<'_>, Error>>, Error> {
-        CommitIterator::new(&self.repo)
+        let mut walker = self.raw().revwalk().map_err(Error::Git)?;
+        walker.push_head().map_err(Error::Git)?;
+
+        Ok(walker.map(|result| {
+            result.map_err(Error::Git).and_then(|oid| {
+                self.raw()
+                    .find_commit(oid)
+                    .map_err(Error::Git)
+                    .map(|git_commit| Commit::new(git_commit, self))
+            })
+        }))
     }
 
     /// Return head as a stratum commit
@@ -57,7 +64,7 @@ impl Repository<Local> {
             .map_err(Error::Git)?
             .peel_to_commit()
             .map_err(Error::Git)?;
-        Ok(Commit::new(head))
+        Ok(Commit::new(head, self))
     }
 
     /// Return a single commit object based on a given oid/hash
@@ -66,7 +73,7 @@ impl Repository<Local> {
             .repo
             .find_commit(git2::Oid::from_str(oid).map_err(Error::Git)?)
             .map_err(Error::Git)?;
-        Ok(Commit::new(git_commit))
+        Ok(Commit::new(git_commit, self))
     }
 }
 

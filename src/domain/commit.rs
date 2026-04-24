@@ -7,14 +7,16 @@ use crate::{Error, Repository};
 // #[derive(Clone)]
 pub struct Commit<'repo> {
     inner: git2::Commit<'repo>,
+    ctx: &'repo Repository,
     cache: OnceCell<git2::Diff<'repo>>,
 }
 
 impl<'repo> Commit<'repo> {
     /// Instantiate a new Commit object from a git2 commit
-    pub fn new(commit: git2::Commit<'repo>) -> Self {
+    pub fn new(commit: git2::Commit<'repo>, repository: &'repo Repository) -> Self {
         Self {
             inner: commit.to_owned(),
+            ctx: repository,
             cache: OnceCell::new(),
         }
     }
@@ -50,42 +52,42 @@ impl<'repo> Commit<'repo> {
     }
 
     /// The number of insertions in the commit
-    pub fn insertions(&self, ctx: &'repo Repository) -> Result<usize, Error> {
-        Ok(self.stats(ctx)?.insertions())
+    pub fn insertions(&self) -> Result<usize, Error> {
+        Ok(self.stats()?.insertions())
     }
 
     /// The number of deletions in the commit
-    pub fn deletions(&self, ctx: &'repo Repository) -> Result<usize, Error> {
-        Ok(self.stats(ctx)?.deletions())
+    pub fn deletions(&self) -> Result<usize, Error> {
+        Ok(self.stats()?.deletions())
     }
 
     /// The total number of lines modified in the commit
-    pub fn lines(&self, ctx: &'repo Repository) -> Result<usize, Error> {
-        Ok(self.insertions(ctx)? + self.deletions(ctx)?)
+    pub fn lines(&self) -> Result<usize, Error> {
+        Ok(self.insertions()? + self.deletions()?)
     }
 
     /// The number of files modified in the commit
-    pub fn files(&self, ctx: &'repo Repository) -> Result<usize, Error> {
-        Ok(self.stats(ctx)?.files_changed())
+    pub fn files(&self) -> Result<usize, Error> {
+        Ok(self.stats()?.files_changed())
     }
 
     //TODO: Should stats also be cached?
     /// Return the git2 Stats from the commits diff
-    fn stats(&self, ctx: &'repo Repository) -> Result<git2::DiffStats, Error> {
-        let diff = self.diff(ctx)?;
+    fn stats(&self) -> Result<git2::DiffStats, Error> {
+        let diff = self.diff()?;
         diff.stats().map_err(Error::Git)
     }
 
     /// Return the git diff for the current commit within the context of a
     /// repository.
-    fn diff(&self, ctx: &'repo Repository) -> Result<&git2::Diff<'repo>, Error> {
-        let diff = self.calculate_diff(ctx)?;
+    fn diff(&self) -> Result<&git2::Diff<'repo>, Error> {
+        let diff = self.calculate_diff()?;
         Ok(self.cache.get_or_init(|| diff))
     }
 
     /// Diff the current commit to it's parent(s) adjusting strategy based on the
     /// number of parents
-    fn calculate_diff(&self, ctx: &'repo Repository) -> Result<git2::Diff<'repo>, Error> {
+    fn calculate_diff(&self) -> Result<git2::Diff<'repo>, Error> {
         let this_tree = self.inner.tree().ok();
         let parent_tree = match self.inner.parent_count() {
             0 => None,
@@ -94,7 +96,8 @@ impl<'repo> Commit<'repo> {
             _ => return Err(Error::PathError("Placeholder error".to_string())),
         };
 
-        ctx.raw()
+        self.ctx
+            .raw()
             //TODO: Expose opts?
             .diff_tree_to_tree(parent_tree.as_ref(), this_tree.as_ref(), None)
             .map_err(Error::Git)
