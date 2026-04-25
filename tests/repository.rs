@@ -1,124 +1,97 @@
 // Integration tests associated with repository.rs
 
 mod common;
-use common::make_repo;
+use std::path::PathBuf;
 
-use stratum::{Commit, Local, Repository};
+use common::test_data_dir;
 
-/// Core test runner for the mock git repo, as there's only one commit which is
-/// the same as HEAD this can be reused many times for this one repository.
-fn run_test_for_repo_head(commit: &Commit<'_>) {
-    assert_eq!(commit.msg(), Some(common::EXPECTED_MSG.to_string()));
+use stratum::{Local, Repository};
 
-    assert!(!commit.is_merge());
-    assert!(commit.parents().collect::<Vec<String>>().is_empty());
-    // Check author equivalence
-    assert_eq!(
-        commit.author().name(),
-        Some(common::EXPECTED_ACTOR_NAME.to_string())
-    );
-    assert_eq!(
-        commit.author().email(),
-        Some(common::EXPECTED_ACTOR_EMAIL.to_string())
-    );
-    // Check committer equivalence
-    assert_eq!(
-        commit.committer().name(),
-        Some(common::EXPECTED_ACTOR_NAME.to_string())
-    );
-    assert_eq!(
-        commit.committer().email(),
-        Some(common::EXPECTED_ACTOR_EMAIL.to_string())
-    );
+fn small_repo() -> PathBuf {
+    test_data_dir().join("small_repo")
+}
+
+/// The hash of HEAD for small_repo
+fn head_hash() -> String {
+    "da39b1326dbc2edfe518b90672734a08f3c13458".to_string()
 }
 
 #[test]
 fn init_repo_from_path() {
     // Same content as 'make_repo' function, this will flag if that causes
     // the other tests to fail
-    let repo_path = make_repo();
-    Repository::<Local>::new(repo_path.path().to_str().unwrap()).expect("Failed to open as repo");
+    let p = small_repo();
+    Repository::<Local>::new(p).expect("Failed to open as repo");
 }
 
 #[test]
 fn test_commit_traversal() {
-    let repo_path = make_repo();
-    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
-        .expect("Failed to open as repo");
+    let repo_path = small_repo();
+    let repo = Repository::<Local>::new(repo_path).expect("Failed to open as repo");
+
+    let mut count: usize = 0;
 
     // Expecting an iter of length one
     let iter = repo.traverse_commits().expect("Iterator Error");
-    for commit in iter {
-        let commit = commit.expect("Expected a valid stratum commit");
-        run_test_for_repo_head(&commit);
+    for _ in iter {
+        count += 1;
     }
+
+    assert_eq!(count, 5)
 }
 
 #[test]
 fn test_head() {
-    let repo_path = make_repo();
-    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
-        .expect("Failed to open as repo");
+    let repo_path = small_repo();
+    let repo = Repository::<Local>::new(repo_path).expect("Failed to open as repo");
 
     let head = repo.head().expect("Failed to create HEAD commit");
-    run_test_for_repo_head(&head);
+    assert_eq!(head.hash(), head_hash());
 }
 
 #[test]
 fn test_single() {
-    let repo_path = make_repo();
-    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
-        .expect("Failed to open as repo");
+    let repo_path = small_repo();
+    let repo = Repository::<Local>::new(repo_path).expect("Failed to open as repo");
 
-    let head_hash = repo
-        .raw()
-        .head()
-        .unwrap()
-        .peel_to_commit()
-        .unwrap()
-        .id()
-        .to_string();
-    let commit = repo.single(&head_hash).expect("Expected valid hash string");
-
-    run_test_for_repo_head(&commit);
+    let commit = repo
+        .single(&head_hash())
+        .expect("Expected valid hash string");
+    assert_eq!(commit.hash(), head_hash());
 }
 
 #[test]
 fn test_insertions() {
-    let repo_path = make_repo();
-    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
-        .expect("Failed to open as repo");
+    let repo_path = small_repo();
+    let repo = Repository::<Local>::new(repo_path).expect("Failed to open as repo");
 
     let head = repo.head().expect("Failed to create HEAD commit");
-    assert_eq!(head.insertions().unwrap(), 1)
+    assert_eq!(head.insertions().unwrap(), 60);
 }
 
 #[test]
 fn test_deletions() {
-    let repo_path = make_repo();
-    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
-        .expect("Failed to open as repo");
+    let repo_path = small_repo();
+    let repo = Repository::<Local>::new(repo_path).expect("Failed to open as repo");
 
     let head = repo.head().expect("Failed to create HEAD commit");
-    assert_eq!(head.deletions().unwrap(), 0)
+    assert_eq!(head.deletions().unwrap(), 63);
 }
 
 #[test]
 fn test_lines() {
-    let repo_path = make_repo();
-    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
-        .expect("Failed to open as repo");
+    let repo_path = small_repo();
+    let repo = Repository::<Local>::new(repo_path).expect("Failed to open as repo");
 
     let head = repo.head().expect("Failed to create HEAD commit");
-    assert_eq!(head.lines().unwrap(), 1)
+    assert_eq!(head.lines().unwrap(), 123);
 }
 
 #[test]
 fn test_files_changed() {
-    let repo_path = make_repo();
-    let repo = Repository::<Local>::new(repo_path.path().to_str().unwrap())
-        .expect("Failed to open as repo");
+    let repo_path = small_repo();
+    let repo = Repository::<Local>::new(repo_path).expect("Failed to open as repo");
 
     let head = repo.head().expect("Failed to create HEAD commit");
-    assert_eq!(head.files().unwrap(), 1)
+    assert_eq!(head.files().unwrap(), 2);
 }

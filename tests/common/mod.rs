@@ -1,34 +1,64 @@
-use std::{fs, path::Path};
-use tempfile::{TempDir, tempdir};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
+use tempfile::TempDir;
 
-pub const EXPECTED_MSG: &str = "commit msg";
-pub const EXPECTED_ACTOR_NAME: &str = "test";
-pub const EXPECTED_ACTOR_EMAIL: &str = "test@example.com";
+use once_cell::sync::Lazy;
+use std::fs::File;
+use zip::ZipArchive;
 
-pub fn make_repo() -> TempDir {
-    let tmpdir = tempdir().expect("Failed to make tmpdir");
+const ZIP_NAME: &str = "test-repos.zip";
+static MAIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
 
-    let repo = git2::Repository::init(&tmpdir).expect("Failed to init repo");
+/// Find the zip located alongside the Cargo.toml
+fn zip_path() -> PathBuf {
+    PathBuf::from_str(MAIFEST_DIR).unwrap().join(ZIP_NAME)
+}
 
-    let fp = tmpdir.path().join("file.txt");
-    fs::write(&fp, "Hello World\n").expect("Failed to write to file");
+/// Unzip the given zip file and deposit its contents directly into dest
+fn unzip_archive(zip_path: &Path, dest: &Path) {
+    let file = File::open(zip_path).expect("Expected a valid zip");
+    let mut archive = ZipArchive::new(file).expect("Expected to read zip");
 
-    // Stage file for commit
-    let mut index = repo.index().expect("Failed to get index");
-    index
-        .add_path(Path::new("file.txt"))
-        .expect("Failed to add file to index");
-    index.write().expect("Failed to write index");
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i).unwrap();
+        // Without skipping the first element in the path everything is extracted into
+        // /tmp/temp_dir/test-repos/*, brittle if the zip file name ever changed
+        //
+        // So we strip the `test-repos` from the path, extracting everything out
+        // into /tmp/temp_dir
+        let out_path = dest.join(
+            file.mangled_name()
+                .components()
+                .skip(1)
+                .collect::<PathBuf>(),
+        );
 
-    let tree_id = index.write_tree().expect("Failed to write tree");
-    let tree = repo.find_tree(tree_id).expect("Failed to find tree");
+        if file.is_dir() {
+            std::fs::create_dir_all(&out_path).unwrap();
+        } else {
+            if let Some(parent) = out_path.parent() {
+                std::fs::create_dir_all(parent).unwrap();
+            }
+            let mut out = std::fs::File::create(&out_path).unwrap();
+            std::io::copy(&mut file, &mut out).unwrap();
+        }
+    }
+}
 
-    // Define author and committer local to this repo
-    let sig = git2::Signature::now(EXPECTED_ACTOR_NAME, EXPECTED_ACTOR_EMAIL)
-        .expect("Failed to create actor signature");
+/// Lazily construct the test data into a temp fir that will last the length of
+/// a single modules test span.
+static TEST_DATA_DIR: Lazy<TempDir> = Lazy::new(|| {
+    let dir = TempDir::new().expect("Create temp dir");
+    let zp = zip_path();
 
-    repo.commit(Some("HEAD"), &sig, &sig, EXPECTED_MSG, &tree, &[])
-        .expect("Failed to create commit");
+    unzip_archive(&zp, dir.path());
 
-    tmpdir
+    dir
+});
+
+/// The path to the test data directory
+pub fn test_data_dir() -> &'static Path {
+    TEST_DATA_DIR.path()
 }
