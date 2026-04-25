@@ -16,6 +16,10 @@ fn head_hash() -> String {
     "da39b1326dbc2edfe518b90672734a08f3c13458".to_string()
 }
 
+fn first_hash() -> String {
+    "a88c84ddf42066611e76e6cb690144e5357d132c".to_string()
+}
+
 #[test]
 fn init_repo_from_path() {
     // Same content as 'make_repo' function, this will flag if that causes
@@ -25,19 +29,29 @@ fn init_repo_from_path() {
 }
 
 #[test]
-fn test_commit_traversal() {
+fn test_traversal_from_head() {
     let repo_path = small_repo();
     let repo = Repository::<Local>::new(repo_path).expect("Failed to open as repo");
 
     let mut count: usize = 0;
-
-    // Expecting an iter of length one
-    let iter = repo.traverse_commits().expect("Iterator Error");
-    for _ in iter {
+    for _ in repo.traverse_commits().expect("Iterator Error") {
         count += 1;
     }
 
     assert_eq!(count, 5)
+}
+
+#[test]
+fn test_traversal_from_commit() {
+    let repo_path = small_repo();
+    let repo = Repository::<Local>::new(repo_path).expect("Failed to open as repo");
+
+    let mut count: usize = 0;
+    for _ in repo.traverse_from(&first_hash()).expect("Iterator Error") {
+        count += 1;
+    }
+
+    assert_eq!(count, 1)
 }
 
 #[test]
