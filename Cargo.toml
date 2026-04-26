@@ -4,15 +4,18 @@ version = "0.1.0"
 authors = ["Jordan Morris <165378667+jordan-314@users.noreply.github.com>"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
-keywords = ["git"]
+keywords = ["git", "mining", "repository", "commit"]
 repository = "https://github.com/jordan-314/git-stratum"
 documentation = "https://docs.rs/git-stratum"
 description = """
-High(er) level repository for mining other git repositories, this library
+High(er) level repository for mining git repositories, this library
 abstracts git2-rs for efficient processing.
 """
-categories = ["git", "repository mining"]
+categories = ["git", "repository mining", "version control"]
 edition = "2024"
+exclude = [
+    "test-repos.zip"
+]
 
 
 [dependencies]
