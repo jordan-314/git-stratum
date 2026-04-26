@@ -1,3 +1,5 @@
+use std::path::Path;
+
 // For now include everything as pub mod to get errors in IDE.
 use git_url_parse::GitUrlParseError;
 use thiserror::Error;
@@ -9,6 +11,19 @@ mod url;
 pub use domain::{actor::Actor, commit::Commit};
 pub use repository::{Local, Remote, Repository};
 pub use url::GitUrl;
+
+/// Helper function for opening a local repository given a path P
+pub fn open_repository<P: AsRef<Path>>(p: P) -> Result<Repository<Local>, Error> {
+    Repository::<Local>::new(p)
+}
+
+/// Helper function for cloning a remote repository given a url
+pub fn clone_repository<P: AsRef<Path>>(
+    url: &str,
+    dest: Option<P>,
+) -> Result<Repository<Local>, Error> {
+    Repository::<Remote>::new(url, dest)
+}
 
 #[derive(Debug, Error)]
 pub enum Error {

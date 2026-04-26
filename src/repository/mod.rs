@@ -143,7 +143,9 @@ impl Repository<Remote> {
     where
         P: AsRef<Path>,
     {
-        todo!("Decide how best to clone.")
+        todo!(
+            "SSH cloning is not yet supported, attempt cloning via a http/https URL or clone manually"
+        )
     }
 }
 
