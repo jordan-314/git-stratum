@@ -2,7 +2,6 @@ name: CI
 on: [pull_request, push]
 
 jobs:
-  jobs:
   pre_job:
     # continue-on-error: true # Uncomment once integration is finished
     runs-on: ubuntu-latest
