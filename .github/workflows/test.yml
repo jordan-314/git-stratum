@@ -1,5 +1,5 @@
-name: CI
-on: [pull_request, push]
+name: Sys Test
+on: [pull_request]
 
 jobs:
   pre_job:
@@ -13,7 +13,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v5
         with:
-          concurrent_skipping: 'same_content_newer'
+          concurrent_skipping: 'never'
           skip_after_successful_duplicate: 'true'
           do_not_skip: '["pull_request", "workflow_dispatch", "schedule"]'
           paths_ignore: '["**/README.md", "**/docs/**"]'
@@ -24,47 +24,47 @@ jobs:
                 - "src/**"
                 - "tests/**"
 
-  coverage:
+  test:
     needs: pre_job
     if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result).all.should_skip
-    runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install Rust
-        run: rustup update stable
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-      - name: Generate code coverage
-        run: cargo llvm-cov --all-features --workspace
-
-  rustfmt:
-    needs: pre_job
-    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result).all.should_skip
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [stable, beta, nightly, macos, windows]
+        include:
+          - build: stable
+            os: ubuntu-latest
+            rust: stable
+          - build: beta
+            os: ubuntu-latest
+            rust: beta
+          - build: nightly
+            os: ubuntu-latest
+            rust: nightly
+          - build: macos
+            os: macos-latest
+            rust: stable
+          - build: windows
+            os: windows-latest
+            rust: stable
     steps:
     - uses: actions/checkout@master
-    - name: Install Rust
-      run: rustup update stable && rustup default stable && rustup component add rustfmt
-    - run: cargo fmt -- --check
+    - name: Install Rust (rustup)
+      run: rustup update ${{ matrix.rust }} --no-self-update && rustup default ${{ matrix.rust }}
+      shell: bash
+    - run: cargo test --locked
 
-  clippy_check:
-    needs: pre_job
-    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result).all.should_skip
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
-
+  # The success job is here to consolidate the total success/failure state of
+  # all other jobs. This job is then included in the GitHub branch protection
+  # rule which prevents merges unless all other jobs are passing. This makes
+  # it easier to manage the list of jobs via this yml file and to prevent
+  # accidentally adding new jobs without also updating the branch protections.
+  #TODO Can this use jobs from other files?
   success:
     name: Success gate
     if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result).all.should_skip
     needs:
-      - coverage
-      - rustfmt
-      - clippy_check
+      - test
     runs-on: ubuntu-latest
     steps:
       - run: jq --exit-status 'all(.result == "success")' <<< '${{ toJson(needs) }}'

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-// For now include everything as pub mod to get errors in IDE.
+// For now include everything as pub mod to get errors in IDE
 use git_url_parse::GitUrlParseError;
 use thiserror::Error;
 
@@ -84,7 +84,7 @@ mod common {
     }
 
     /// Lazily construct the test data into a temp dir that will last the length of
-    /// a single modules test span.
+    /// a single modules test span
     static TEST_DATA_DIR: Lazy<TempDir> = Lazy::new(|| {
         let dir = TempDir::new().expect("Create temp dir");
         make_repo(&dir);
