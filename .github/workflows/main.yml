@@ -60,7 +60,7 @@ jobs:
 
   success:
     name: Success gate
-    if: always()
+    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result.all).should_skip
     needs:
       - coverage
       - rustfmt
