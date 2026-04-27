@@ -18,13 +18,15 @@ jobs:
           do_not_skip: '["pull_request", "workflow_dispatch", "schedule"]'
           # Skip actions if no change to src or tests
           paths_ignore: '["**/README.md", "**/docs/**"]'
-          paths:
-            - "src/**"
-            - "tests/**"
+          paths_filter: |
+            all: 
+              paths:
+                - "src/**"
+                - "tests/**"
 
   test:
     needs: pre_job
-    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result).should_skip
+    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result.all).should_skip
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

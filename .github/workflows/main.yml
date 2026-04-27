@@ -18,13 +18,15 @@ jobs:
           do_not_skip: '["pull_request", "workflow_dispatch", "schedule"]'
           paths_ignore: '["**/README.md", "**/docs/**"]'
           # Skip actions if no change to src or tests
-          paths:
-            - "src/**"
-            - "tests/**"
+          paths_filter: |
+            all: 
+              paths:
+                - "src/**"
+                - "tests/**"
 
   coverage:
     needs: pre_job
-    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result).should_skip
+    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result.all).should_skip
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -39,7 +41,7 @@ jobs:
 
   rustfmt:
     needs: pre_job
-    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result).should_skip
+    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result.all).should_skip
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -49,7 +51,7 @@ jobs:
 
   clippy_check:
     needs: pre_job
-    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result).should_skip
+    if: needs.pre_job.outputs.should_skip != 'true' && !fromJSON(needs.pre_job.outputs.paths_result.all).should_skip
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
