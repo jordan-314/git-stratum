@@ -32,24 +32,33 @@ impl<'c> ModifiedFile<'c> {
     }
 
     /// Return the path of the old file in the diff
-    pub fn old_path(&self) -> Result<Option<&Path>, Error> {
-        Ok(self.patch()?.and_then(|p| p.delta().old_file().path()))
+    pub fn old_path(&self) -> Option<&Path> {
+        self.delta()?.old_file().path()
     }
 
     /// Return the path of the new file in the diff
-    pub fn new_file(&self) -> Result<Option<&Path>, Error> {
-        Ok(self.patch()?.and_then(|p| p.delta().new_file().path()))
+    pub fn new_file(&self) -> Option<&Path> {
+        self.delta()?.new_file().path()
     }
 
     /// Return the file status of the given patch
-    pub fn status(&self) -> Result<Option<git2::Delta>, Error> {
-        Ok(self.patch()?.map(|p| p.delta().status()))
+    pub fn status(&self) -> Option<git2::Delta> {
+        Some(self.delta()?.status())
     }
 
-    /// Return the patch given the diff
+    /// Return the delta associated with the index
+    fn delta(&self) -> Option<git2::DiffDelta<'_>> {
+        self.diff.get_delta(self.n)
+    }
+
+    /// Return the patch given the diff, caching it within the struct
     //TODO: https://github.com/segfault-merchant/git-stratum/issues/32
+    #[allow(dead_code)]
     fn patch(&self) -> Result<Option<&git2::Patch<'_>>, Error> {
         let patch = git2::Patch::from_diff(self.diff, self.n)?;
         Ok(self.cache.get_or_init(|| patch).as_ref())
     }
 }
+
+#[cfg(test)]
+mod test {}
