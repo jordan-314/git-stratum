@@ -119,149 +119,102 @@ impl<'repo> Commit<'repo> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::common::{EXPECTED_ACTOR_EMAIL, EXPECTED_ACTOR_NAME, EXPECTED_MSG, init_repo};
+    use crate::{
+        Local, Repository,
+        common::{EXPECTED_ACTOR_EMAIL, EXPECTED_ACTOR_NAME, EXPECTED_MSG, init_repo},
+    };
+
+    fn commit_fixture<F, R>(f: F) -> R
+    where
+        F: FnOnce(&Repository<Local>, &Commit) -> R,
+    {
+        let repo = init_repo();
+
+        let repo = Repository::<Local>::from_repository(repo);
+        let commit = repo.head().expect("Failed to get HEAD");
+
+        f(&repo, &commit)
+    }
 
     #[test]
     fn test_msg() {
-        let repo = init_repo();
-        let git_commit = repo
-            .raw()
-            .head()
-            .expect("Expected a valid reference")
-            .peel_to_commit()
-            .expect("Expected a valid git2 commit");
-        let commit = Commit::new(git_commit, &repo);
-
-        assert_eq!(commit.msg().unwrap(), EXPECTED_MSG.to_string());
+        commit_fixture(|_, commit| {
+            // use mfile here
+            assert_eq!(commit.msg(), Some(EXPECTED_MSG.to_owned()));
+        });
     }
 
     #[test]
     fn test_author() {
-        let repo = init_repo();
-        let git_commit = repo
-            .raw()
-            .head()
-            .expect("Expected a valid reference")
-            .peel_to_commit()
-            .expect("Expected a valid git2 commit");
-        let commit = Commit::new(git_commit, &repo);
-
-        assert_eq!(
-            commit.author().name().unwrap(),
-            EXPECTED_ACTOR_NAME.to_string()
-        );
-        assert_eq!(
-            commit.author().email().unwrap(),
-            EXPECTED_ACTOR_EMAIL.to_string()
-        );
+        commit_fixture(|_, commit| {
+            assert_eq!(
+                commit.author().name().unwrap(),
+                EXPECTED_ACTOR_NAME.to_string()
+            );
+            assert_eq!(
+                commit.author().email().unwrap(),
+                EXPECTED_ACTOR_EMAIL.to_string()
+            );
+        });
     }
 
     #[test]
     fn test_committer() {
-        let repo = init_repo();
-        let git_commit = repo
-            .raw()
-            .head()
-            .expect("Expected a valid reference")
-            .peel_to_commit()
-            .expect("Expected a valid git2 commit");
-        let commit = Commit::new(git_commit, &repo);
-
-        assert_eq!(
-            commit.committer().name().unwrap(),
-            EXPECTED_ACTOR_NAME.to_string()
-        );
-        assert_eq!(
-            commit.committer().email().unwrap(),
-            EXPECTED_ACTOR_EMAIL.to_string()
-        );
+        commit_fixture(|_, commit| {
+            assert_eq!(
+                commit.committer().name().unwrap(),
+                EXPECTED_ACTOR_NAME.to_string()
+            );
+            assert_eq!(
+                commit.committer().email().unwrap(),
+                EXPECTED_ACTOR_EMAIL.to_string()
+            );
+        });
     }
 
     #[test]
     fn test_parents() {
-        let repo = init_repo();
-        let git_commit = repo
-            .raw()
-            .head()
-            .expect("Expected a valid reference")
-            .peel_to_commit()
-            .expect("Expected a valid git2 commit");
-        let commit = Commit::new(git_commit, &repo);
-
-        assert_eq!(commit.parents().collect::<Vec<String>>().len(), 1);
+        commit_fixture(|_, commit| {
+            assert_eq!(commit.parents().collect::<Vec<String>>().len(), 1);
+        });
     }
 
     #[test]
     fn test_is_merge() {
-        let repo = init_repo();
-        let git_commit = repo
-            .raw()
-            .head()
-            .expect("Expected a valid reference")
-            .peel_to_commit()
-            .expect("Expected a valid git2 commit");
-        let commit = Commit::new(git_commit, &repo);
-
-        assert!(!commit.is_merge());
+        commit_fixture(|_, commit| {
+            assert!(!commit.is_merge());
+        });
     }
 
     #[test]
     fn test_insertions() {
-        let repo = init_repo();
-        let git_commit = repo
-            .raw()
-            .head()
-            .expect("Expected a valid reference")
-            .peel_to_commit()
-            .expect("Expected a valid git2 commit");
-        let commit = Commit::new(git_commit, &repo);
-
-        assert_eq!(commit.insertions().unwrap(), 1)
+        commit_fixture(|_, commit| {
+            assert_eq!(commit.insertions().unwrap(), 1);
+        });
     }
 
     #[test]
     fn test_deletions() {
-        let repo = init_repo();
-        let git_commit = repo
-            .raw()
-            .head()
-            .expect("Expected a valid reference")
-            .peel_to_commit()
-            .expect("Expected a valid git2 commit");
-        let commit = Commit::new(git_commit, &repo);
-
-        assert_eq!(commit.deletions().unwrap(), 0)
+        commit_fixture(|_, commit| {
+            assert_eq!(commit.deletions().unwrap(), 0);
+        });
     }
 
     #[test]
     fn test_lines() {
-        let repo = init_repo();
-        let git_commit = repo
-            .raw()
-            .head()
-            .expect("Expected a valid reference")
-            .peel_to_commit()
-            .expect("Expected a valid git2 commit");
-        let commit = Commit::new(git_commit, &repo);
-
-        assert_eq!(commit.lines().unwrap(), 1)
+        commit_fixture(|_, commit| {
+            assert_eq!(commit.lines().unwrap(), 1);
+        });
     }
 
     #[test]
     fn test_stat() {
-        let repo = init_repo();
-        let git_commit = repo
-            .raw()
-            .head()
-            .expect("Expected a valid reference")
-            .peel_to_commit()
-            .expect("Expected a valid git2 commit");
-        let commit = Commit::new(git_commit, &repo);
-
-        // Won't compile if return type is bad, stat otherwise checked in insertions
-        // and deletions test functions
-        let _: git2::DiffStats = commit
-            .stats()
-            .expect("Failed to construct git2 Stats object");
+        commit_fixture(|_, commit| {
+            // Won't compile if return type is bad, stat otherwise checked in insertions
+            // and deletions test functions
+            let _: git2::DiffStats = commit
+                .stats()
+                .expect("Failed to construct git2 Stats object");
+        });
     }
 }
