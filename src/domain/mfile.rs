@@ -16,14 +16,7 @@ impl<'c> ModifiedFile<'c> {
     /// As a single diff can have > 1 modified/touched file, a single unsigned
     /// integer is provided to specify the delta and/or patch that this file
     /// looks to represent. Hence, the struct will normally be instantiated via
-    /// iterating over the diff deltas as they are readily avaliable. For
-    /// example:
-    ///
-    /// ```no_run
-    /// for idx in 0..diff.deltas().len() {
-    ///     let mfile = ModifiedFile::new(&diff, idx)
-    /// }
-    /// ```
+    /// iterating over the diff deltas as they are readily avaliable.
     pub fn new(diff: &'c Diff<'_>, n: usize) -> Self {
         ModifiedFile {
             cache: OnceLock::new(),
@@ -43,6 +36,7 @@ impl<'c> ModifiedFile<'c> {
     }
 
     /// Return the file status of the given patch
+    //TODO: Should this return a custom type?? Probably
     pub fn status(&self) -> Option<Delta> {
         Some(self.delta()?.status())
     }
@@ -62,4 +56,57 @@ impl<'c> ModifiedFile<'c> {
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+    use super::*;
+    use crate::common::init_repo;
+
+    fn mfile_fixture<F, R>(f: F) -> R
+    where
+        F: FnOnce(&git2::Diff, &ModifiedFile) -> R,
+    {
+        let repo = init_repo();
+
+        let c1 = repo
+            .head()
+            .expect("Failed to fetch HEAD")
+            .peel_to_commit()
+            .expect("Failed to peel HEAD to commit");
+        let c2 = c1.parent(0).expect("Couldn't get parent");
+
+        let diff = repo
+            .diff_tree_to_tree(
+                Some(&c2.tree().expect("Failed to get tree")),
+                Some(&c1.tree().expect("Failed to get tree")),
+                None,
+            )
+            .expect("Failed to make diff");
+
+        let mfile = ModifiedFile::new(&diff, 0);
+
+        f(&diff, &mfile)
+    }
+
+    #[test]
+    fn test_old_path() {
+        mfile_fixture(|_, mfile| {
+            // use mfile here
+            assert_eq!(mfile.old_path().unwrap(), "file.txt");
+        });
+    }
+
+    #[test]
+    fn test_new_path() {
+        mfile_fixture(|_, mfile| {
+            // use mfile here
+            assert_eq!(mfile.new_file().unwrap(), "file.txt");
+        });
+    }
+
+    #[test]
+    fn test_delta() {
+        mfile_fixture(|_, mfile| {
+            // use mfile here
+            assert_eq!(mfile.new_file().unwrap(), "file.txt");
+        });
+    }
+}
