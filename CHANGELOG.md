@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3](https://github.com/segfault-merchant/git-stratum/compare/v0.2.2...v0.2.3) - 2026-05-03
+
+### Added
+
+- Define test helper function to instantiate repo from git2::Repo
+- Test new modified file struct
+- define a commits modified files in terms of the delta and patches
+
+### Fixed
+
+- Ensure commit testing adheres to new test repo return
+- unit test repo generation should return git2::Repo to enable more explciit testing
+
+### Other
+
+- import git2 objects to simplify content
+- Prefer use of delta for delta-related methods as it's cheaper than patches
+- release v0.2.2
+- update README to match testing
+- *(test)* Unitise test repo generation to ensure readability
+
 ## [0.2.2](https://github.com/segfault-merchant/git-stratum/compare/v0.2.1...v0.2.2) - 2026-05-01
 
 ### Other
