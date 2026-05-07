@@ -67,6 +67,35 @@ impl<'repo> Commit<'repo> {
         Actor::new(self.inner.committer())
     }
 
+    /// Iterate all utf-8 branch names that the current commit is contained in
+    ///
+    /// ## Note
+    ///
+    /// Potentially expensive method. Take caution when using within a loop.
+    pub fn branches(&self) -> Result<impl Iterator<Item = Result<String, Error>>, Error> {
+        self.branch_iterator(None)
+    }
+
+    /// Iterate all **local** utf-8 branch names that the current commit is contained in
+    ///
+    /// ## Note
+    ///
+    /// Potentially expensive method. Take caution when using within a loop.
+    pub fn local_branches(&self) -> Result<impl Iterator<Item = Result<String, Error>>, Error> {
+        let flag = Some(git2::BranchType::Local);
+        self.branch_iterator(flag)
+    }
+
+    /// Iterate all **remote** utf-8 branch names that the current commit is contained in
+    ///
+    /// ## Note
+    ///
+    /// Potentially expensive method. Take caution when using within a loop.
+    pub fn remote_branches(&self) -> Result<impl Iterator<Item = Result<String, Error>>, Error> {
+        let flag = Some(git2::BranchType::Remote);
+        self.branch_iterator(flag)
+    }
+
     /// Retrun the hashes of all commit parents
     pub fn parents(&self) -> impl Iterator<Item = String> {
         self.inner.parent_ids().map(|id| id.to_string())
@@ -141,6 +170,49 @@ impl<'repo> Commit<'repo> {
             //TODO: Resolve merge commit process
             _ => return Err(Error::PathError("Placeholder error".to_string())),
         })
+    }
+
+    /// Check if a commit contains a branch
+    ///
+    /// If an error occurs returns false, this is done so any erroring branches
+    /// are filtered out of any dependant processes
+    fn commit_contains_branch(&self, branch: git2::Oid, commit: git2::Oid) -> bool {
+        self.ctx.raw().graph_descendant_of(branch, commit).is_ok()
+    }
+
+    /// Iterate over the specified branch types, None will return all branches
+    fn branch_iterator(
+        &self,
+        bt: Option<git2::BranchType>,
+    ) -> Result<impl Iterator<Item = Result<String, Error>>, Error> {
+        let commit_id = self.inner.id();
+        let branches = self.ctx.raw().branches(bt).map_err(Error::Git)?;
+
+        Ok(branches.filter_map(move |res| {
+            let branch = match res {
+                Ok(v) => v.0,
+                Err(e) => return Some(Err(Error::Git(e))),
+            };
+
+            // If a branch does not have a valid target then filter that
+            // branch out
+            // TODO: Is this excluding a subset of symbolic references
+            let oid = match branch.get().target() {
+                Some(v) => v,
+                None => return None,
+            };
+
+            // Filter out a branch if the commit does NOT contain it
+            if !self.commit_contains_branch(oid, commit_id) {
+                return None;
+            }
+
+            match branch.name() {
+                Ok(Some(name)) => Some(Ok(name.to_string())),
+                Ok(None) => None, // drop non-utf8 branches
+                Err(e) => Some(Err(Error::Git(e))),
+            }
+        }))
     }
 }
 
