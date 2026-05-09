@@ -84,6 +84,8 @@ fn test_in_main_branch() {
 #[test]
 fn test_not_in_main_branch() {
     repo_fixture("branches_not_merged", |r| {
+        // The commit here is the HEAD of branch "b1" which has not been merged
+        // into main
         let commit = r
             .single("702d469710d2087e662c210fd0e4f9418ec813fd")
             .expect("Failed to fetch commit");
