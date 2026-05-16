@@ -10,7 +10,7 @@
     <a href="https://crates.io/crates/git-stratum"><img src="https://img.shields.io/crates/v/git-stratum.svg" alt="Crates.io"></a>
 </div>
 
-Git Stratum, or more simply stratum, enables you to mine a git repository efficiently one commit (or stratum) at a time. **Stratum**: A single layer of something - [Cambridge]("https://dictionary.cambridge.org/dictionary/english/stratum").
+Git Stratum, or more simply stratum, enables you to mine a git repository efficiently one commit (or stratum) at a time. **Stratum**: A single layer of something - [Cambridge Dictionary](https://dictionary.cambridge.org/dictionary/english/stratum/).
 
 ## Quick Start
 
@@ -34,7 +34,7 @@ for commit in repo.traverse_commits().unwrap() {
 
 *Note that the API is liable to change up until version 1.0.0.*
 
-For more detail on the API, see the [docs]().
+For more detail on the API, see the [docs](https://docs.rs/git-stratum/0.3.4/stratum/).
 
 ## Testing
 
