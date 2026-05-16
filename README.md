@@ -1,8 +1,18 @@
 # Git Stratum
 
-**Stratum**: A single layer of something - [Cambridge Dictionary]("https://dictionary.cambridge.org/dictionary/english/stratum").
+<h1 align="center">
+    Git Stratum
+</h1>
 
-A library that lets you anlayse your repository one **strata** at a time, leveraging a higher level API than [git2-rs](https://github.com/rust-lang/git2-rs) analysing your repository is simple!
+<div align="center">
+    <a href="https://github.com/segfault-merchant/git-stratum/actions/workflows/main.yml"><img src="https://github.com/segfault-merchant/git-stratum/actions/workflows/main.yml/badge.svg?branch=main" alt="GitHub branch checks state"></a>
+    |
+    <a href="https://github.com/segfault-merchant/git-stratum/actions/workflows/test.yml"><img src="https://github.com/segfault-merchant/git-stratum/actions/workflows/test.yml/badge.svg" alt="GitHub test checks state"></a>
+    |
+    <a href="https://crates.io/crates/git-stratum"><img src="https://img.shields.io/crates/v/git-stratum.svg" alt="Crates.io"></a>
+</div>
+
+Git Stratum, or more simply stratum, enables you to mine a git repository efficiently one commit (or stratum) at a time. **Stratum**: A single layer of something - [Cambridge]("https://dictionary.cambridge.org/dictionary/english/stratum").
 
 ## Quick Start
 
