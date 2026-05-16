@@ -53,25 +53,59 @@ impl Actor {
     pub fn timestamp(&self) -> Option<DateTime<Utc>> {
         DateTime::from_timestamp_secs(self.inner.when().seconds())
     }
+
+    /// Return the offset from the UTC timestamp in minutes
+    pub fn offset(&self) -> i32 {
+        self.inner.when().offset_minutes()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_actor() {
+    fn actor_factory() -> Actor {
         let sig = Signature::new(
             "test",
             "test@example.com",
-            &git2::Time::new(1_600_000_000, 0),
+            &git2::Time::new(1_600_000_000, -60),
         )
         .unwrap();
 
-        let actor = Actor::new(sig);
+        Actor::new(sig)
+    }
+
+    #[test]
+    fn test_name() {
+        let actor = actor_factory();
+        assert_eq!(actor.name(), Some("test"));
+    }
+
+    #[test]
+    fn test_email() {
+        let actor = actor_factory();
+        assert_eq!(actor.email(), Some("test@example.com"));
+    }
+
+    #[test]
+    fn test_time() {
+        let actor = actor_factory();
+        assert_eq!(actor.timestamp().unwrap().timestamp(), 1_600_000_000);
+    }
+
+    #[test]
+    fn test_offset() {
+        let actor = actor_factory();
+        assert_eq!(actor.offset(), -60);
+    }
+
+    #[test]
+    fn test_from_str() {
+        let actor = Actor::from_str("test <test@example.com>").unwrap();
 
         assert_eq!(actor.name(), Some("test"));
         assert_eq!(actor.email(), Some("test@example.com"));
-        assert_eq!(actor.timestamp().unwrap().timestamp(), 1_600_000_000);
+        assert_eq!(actor.timestamp().unwrap().timestamp(), 0);
+        assert_eq!(actor.offset(), 0);
     }
 }
