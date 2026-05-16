@@ -31,8 +31,21 @@ impl<'c> ModifiedFile<'c> {
     }
 
     /// Return the path of the new file in the diff
-    pub fn new_file(&self) -> Option<&Path> {
+    pub fn new_path(&self) -> Option<&Path> {
         self.delta()?.new_file().path()
+    }
+
+    /// Return the current filename of the modified file in the commit
+    ///
+    /// Returns None if neither the old or new filename are valid
+    pub fn filename(&self) -> Option<&str> {
+        let dev_null = Path::new("/dev/null");
+        let path = match self.new_path() {
+            Some(p) if p != dev_null => p,
+            _ => self.old_path()?,
+        };
+
+        path.file_name()?.to_str()
     }
 
     /// Return the file status of the given patch
@@ -98,7 +111,7 @@ mod test {
     fn test_new_path() {
         mfile_fixture(|_, mfile| {
             // use mfile here
-            assert_eq!(mfile.new_file().unwrap(), "file.txt");
+            assert_eq!(mfile.new_path().unwrap(), "file.txt");
         });
     }
 
@@ -106,7 +119,7 @@ mod test {
     fn test_delta() {
         mfile_fixture(|_, mfile| {
             // use mfile here
-            assert_eq!(mfile.new_file().unwrap(), "file.txt");
+            assert_eq!(mfile.new_path().unwrap(), "file.txt");
         });
     }
 }
