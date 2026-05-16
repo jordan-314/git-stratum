@@ -92,3 +92,14 @@ fn test_not_in_main_branch() {
         assert!(commit.in_main().unwrap());
     })
 }
+
+#[test]
+fn test_project_path() {
+    repo_fixture("small_repo", |r| {
+        let commit = r.head().unwrap();
+        let p = commit.project_path();
+
+        assert!(p.is_dir());
+        assert!(p.ends_with("small_repo"));
+    })
+}

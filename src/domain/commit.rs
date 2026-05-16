@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::path::Path;
 use std::sync::LazyLock;
 use std::{cell::OnceCell, str::FromStr};
 
@@ -139,6 +140,13 @@ impl<'repo> Commit<'repo> {
     /// The number of files modified in the commit
     pub fn files(&self) -> Result<usize, Error> {
         Ok(self.stats()?.files_changed())
+    }
+
+    /// Return the project path that the commit belongs to
+    pub fn project_path(&self) -> &Path {
+        let git_folder = self.ctx.raw().path();
+        // Parent dir should always be infallible
+        git_folder.parent().unwrap()
     }
 
     //TODO: Should stats also be cached?
