@@ -2,83 +2,32 @@
     Git Stratum
 </h1>
 
-<div align="center">
-    <a href="https://github.com/segfault-merchant/git-stratum/actions/workflows/main.yml"><img src="https://github.com/segfault-merchant/git-stratum/actions/workflows/main.yml/badge.svg?branch=main" alt="GitHub branch checks state"></a>
-    |
-    <a href="https://github.com/segfault-merchant/git-stratum/actions/workflows/test.yml"><img src="https://github.com/segfault-merchant/git-stratum/actions/workflows/test.yml/badge.svg" alt="GitHub test checks state"></a>
-    |
-    <a href="https://crates.io/crates/git-stratum"><img src="https://img.shields.io/crates/v/git-stratum.svg" alt="Crates.io"></a>
-</div>
+Git Stratum, or more concisely, `stratun` is a git repository mining library written in rust. It's predominantly based on [Pydriller](https://github.com/ishepard/pydriller/) and intends to follow a similar feature root, though dividing some of the variety into individual crates.
 
-Git Stratum, or more simply stratum, enables you to mine a git repository efficiently one commit (or stratum) at a time. **Stratum**: A single layer of something - [Cambridge Dictionary](https://dictionary.cambridge.org/dictionary/english/stratum/).
+## Workspace Structure
 
-## Quick Start
+If you're not familiar with cargo workspaces, the see [the rust book](https://doc.rust-lang.org/stable/book/ch14-03-cargo-workspaces.html#cargo-workspaces). The repository is subdivided into the scrates which are named after their intended import name. The name of each crate on `crates.io` (if published) can be found in the individual `Cargo.toml` files.
 
-First add `stratum` to your dependencies.
+The repository is structured as a typical `worksapce` but here is a mapping of what the individual crates are for clarity:
 
-```bash
-cargo add git-stratum
-```
+- `stratum`: 
+    - The core library, everything depends on this unless otherwise stated.
+    - Published: Yes
+- `ffi`:
+    - The `stratum` FFI, currently this is a placeholder for the future work.
+    - Published: Yes (intention)
+- `stratum-utils`:
+    - Utility functions that are common to the `stratum` package, currently limited to testing utilities, may be expanded in the future.
+    - **Does not depend on** `stratum`
+    - Published: No
 
-Then inside of your main function:
+### Future Crates
 
-```rust
-use stratum::open_repository;
+This is a shortlist of future work that is intended and will exist in its own crate.
 
-let repo = open_repository("path/to/repo").unwrap();
-for commit in repo.traverse_commits().unwrap() {
-    let commit = commit.unwrap();
-    ...
-}
-```
+- `stratum-dmm`: See `Pydriller` DMM functionality for more insight as to what this will be.
+- `stratum-metrics`: See `pydriller.process_metrics` for more insight.
 
-*Note that the API is liable to change up until version 1.0.0.*
+## Project Scope
 
-For more detail on the API, see the [docs](https://docs.rs/git-stratum/0.3.4/stratum/).
-
-## Testing
-
-### Unit Testing
-
-In `/src/lib.rs` a test specific module called `common` is defined, in here a `git2` reposiotry is lazilly made for testing purposes. This method for unit testing was chosen for several reasons:
-
-- Mocking `git2` objects would be very challenging as they do not expose any traits.
-- Lazilly constructing this repository ensures it is only made once per unit testing module.
-- This allows for the direct testing of private functions with minimal overhead/difficulty.
-
-#### Example
-
-```rust
-#[cfg(test)]
-mod test {
-    use crate::common::{init_repo};
-
-    #[test]
-    fn test_something() {
-        let repo = init_repo();
-        ...
-    }
-}
-```
-
-### Integration Testing
-
-The integration tests, will effectively function the same as the unit tests, however the data that the integration tests have access to (in `test-repos.zip`) is far more elaborate and rich, the primary goal of this design is to catch the edge cases that the unit tests miss.
-
-To write new tests:
-- Manually unzip the `test-repos.zip` choose a repository to use in testing.
-    - If one is not appropriate, create a new one, **be sure to upload a new zip file containing your new repository**.
-- To use your chosen repository, use a code block similar to the following:
-
-```rust
-mod common;
-use common::test_data_dir;
-
-fn small_repo() -> PathBuf {
-    test_data_dir().join("small_repo")
-}
-```
-
-- The `test-repo` should only be unzipped once per test module, so if your testing fits within an existing test module, it will save some time to put the test in an existing module.
-
-**credit:** The `/test-repos.zip` file was originally created by the maintainer of [PyDriller](https://github.com/ishepard/pydriller/tree/master), which is the core inspiration for this project. At the time of writing Pydriller is under the Apache2.0 license.
+This project looks to create a repository mining framework written in Rust. Obviously a lot of research is not done in rust, therefore, the project will look to build an FFI layer. It has not been decided whether this will be a C-FFI or a PyO3 specific FFI. IF it is the former, then this repository will **not** wrap the C-FFI here, some language wrappers, namely Python, will be managed alongside this repository. However, if you want access in another language that does not exist, then the earnest to create the wrapper around the FFI falls to you.
