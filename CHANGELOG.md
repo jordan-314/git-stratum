@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0](https://github.com/segfault-merchant/git-stratum/releases/tag/git-stratum-utils-v0.1.0) - 2026-05-17
+
+### Added
+
+- move common code into utilities crate for simpler reuse in main crate
+- define future crates with gitkeep
+
+### Fixed
+
+- update dependencies across the workspace
+
 ## [0.4.3](https://github.com/segfault-merchant/git-stratum/compare/v0.4.2...v0.4.3) - 2026-05-17
 
 ### Added
