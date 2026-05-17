@@ -54,12 +54,23 @@ impl<'c> ModifiedFile<'c> {
         Some(self.delta()?.status())
     }
 
+    /// The number of lines added in this modified file
+    pub fn insertions(&self) -> Result<usize, Error> {
+        // As per git2 docs first entry is insertions
+        Ok(match self.patch()? {
+            Some(p) => p.line_stats()?.1,
+            None => 0,
+        })
+    }
+
     /// Return the delta associated with the index
     fn delta(&self) -> Option<DiffDelta<'_>> {
         self.diff.get_delta(self.n)
     }
 
     /// Return the patch given the diff, caching it within the struct
+    ///
+    /// Returns Ok(None) if the file is unchanged
     //TODO: https://github.com/segfault-merchant/git-stratum/issues/32
     #[allow(dead_code)]
     fn patch(&self) -> Result<Option<&Patch<'_>>, Error> {
