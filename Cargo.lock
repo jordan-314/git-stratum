@@ -562,6 +562,7 @@ version = "0.4.3"
 dependencies = [
  "chrono",
  "criterion",
+ "git-stratum-utils",
  "git-url-parse",
  "git2",
  "openssl",
@@ -569,6 +570,13 @@ dependencies = [
  "tempfile",
  "thiserror",
  "todo",
+]
+
+[[package]]
+name = "git-stratum-utils"
+version = "0.1.0"
+dependencies = [
+ "tempfile",
  "zip",
 ]
 

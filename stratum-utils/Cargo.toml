@@ -1,0 +1,22 @@
+[package]
+name = "git-stratum-utils"
+version = "0.1.0"
+authors = ["Jordan Morris <165378667+jordan-314@users.noreply.github.com>"]
+license = "MIT OR Apache-2.0"
+description = """
+Utility functions that can be used across git-stratum.
+"""
+edition = "2024"
+exclude = [
+    "test-repos.zip"
+]
+
+
+[lib]
+name = "stratum_utils"
+path = "src/lib.rs"
+
+[dependencies]
+tempfile = "3.27.0"
+zip = "8.6.0"
+
