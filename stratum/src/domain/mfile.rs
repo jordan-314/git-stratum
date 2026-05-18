@@ -1,12 +1,13 @@
-use git2::{Delta, Diff, DiffDelta, Patch};
+use git2::{Delta, DiffDelta, Patch};
 use std::{path::Path, sync::OnceLock};
 
 use crate::Error;
+use crate::domain::RcDiff;
 
 /// A file that was touched in a commit
 pub struct ModifiedFile<'c> {
     cache: OnceLock<Option<Patch<'c>>>,
-    diff: &'c Diff<'c>,
+    diff: RcDiff<'c>,
     n: usize,
 }
 
@@ -17,7 +18,7 @@ impl<'c> ModifiedFile<'c> {
     /// integer is provided to specify the delta and/or patch that this file
     /// looks to represent. Hence, the struct will normally be instantiated via
     /// iterating over the diff deltas as they are readily avaliable.
-    pub fn new(diff: &'c Diff<'_>, n: usize) -> Self {
+    pub fn new(diff: RcDiff<'c>, n: usize) -> Self {
         ModifiedFile {
             cache: OnceLock::new(),
             diff,
@@ -82,19 +83,21 @@ impl<'c> ModifiedFile<'c> {
     /// Returns Ok(None) if the file is unchanged
     //TODO: https://github.com/segfault-merchant/git-stratum/issues/32
     fn patch(&self) -> Result<Option<&Patch<'_>>, Error> {
-        let patch = Patch::from_diff(self.diff, self.n)?;
+        let patch = Patch::from_diff(self.diff.as_ref(), self.n)?;
         Ok(self.cache.get_or_init(|| patch).as_ref())
     }
 }
 
 #[cfg(test)]
 mod test {
+    use std::rc::Rc;
+
     use super::*;
     use crate::common::init_repo;
 
     fn mfile_fixture<F, R>(f: F) -> R
     where
-        F: FnOnce(&git2::Diff, &ModifiedFile) -> R,
+        F: FnOnce(&ModifiedFile) -> R,
     {
         let repo = init_repo();
 
@@ -113,14 +116,15 @@ mod test {
             )
             .expect("Failed to make diff");
 
-        let mfile = ModifiedFile::new(&diff, 0);
+        let diff = Rc::new(diff);
+        let mfile = ModifiedFile::new(diff, 0);
 
-        f(&diff, &mfile)
+        f(&mfile)
     }
 
     #[test]
     fn test_old_path() {
-        mfile_fixture(|_, mfile| {
+        mfile_fixture(|mfile| {
             // use mfile here
             assert_eq!(mfile.old_path().unwrap(), "file.txt");
         });
@@ -128,7 +132,7 @@ mod test {
 
     #[test]
     fn test_new_path() {
-        mfile_fixture(|_, mfile| {
+        mfile_fixture(|mfile| {
             // use mfile here
             assert_eq!(mfile.new_path().unwrap(), "file.txt");
         });
@@ -136,7 +140,7 @@ mod test {
 
     #[test]
     fn test_delta() {
-        mfile_fixture(|_, mfile| {
+        mfile_fixture(|mfile| {
             // use mfile here
             assert_eq!(mfile.new_path().unwrap(), "file.txt");
         });
