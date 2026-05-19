@@ -1,14 +1,17 @@
 use git2::{Delta, DiffDelta, Patch};
-use std::{path::Path, sync::OnceLock};
+use lru::LruCache;
+use std::{num::NonZeroUsize, path::Path, rc::Rc, sync::Mutex};
 
 use crate::Error;
-use crate::domain::RcDiff;
+use crate::domain::{CachedPatch, RcDiff, RcPatch};
+
+const CACHE_KEY: u8 = 1;
 
 /// A file that was touched in a commit
 pub struct ModifiedFile<'c> {
-    cache: OnceLock<Option<Patch<'c>>>,
     diff: RcDiff<'c>,
     n: usize,
+    patch_cache: Mutex<CachedPatch<'c>>,
 }
 
 impl<'c> ModifiedFile<'c> {
@@ -19,10 +22,12 @@ impl<'c> ModifiedFile<'c> {
     /// looks to represent. Hence, the struct will normally be instantiated via
     /// iterating over the diff deltas as they are readily avaliable.
     pub fn new(diff: RcDiff<'c>, n: usize) -> Self {
+        let patch_cache = Mutex::new(LruCache::new(NonZeroUsize::new(1).unwrap()));
+
         ModifiedFile {
-            cache: OnceLock::new(),
             diff,
             n,
+            patch_cache,
         }
     }
 
@@ -81,10 +86,17 @@ impl<'c> ModifiedFile<'c> {
     /// Return the patch given the diff, caching it within the struct
     ///
     /// Returns Ok(None) if the file is unchanged
-    //TODO: https://github.com/segfault-merchant/git-stratum/issues/32
-    fn patch(&self) -> Result<Option<&Patch<'_>>, Error> {
-        let patch = Patch::from_diff(self.diff.as_ref(), self.n)?;
-        Ok(self.cache.get_or_init(|| patch).as_ref())
+    fn patch(&self) -> Result<Option<RcPatch<'c>>, Error> {
+        let mut guard = self.patch_cache.lock().map_err(|_| Error::PoisonedCache)?;
+        let data = guard.try_get_or_insert(CACHE_KEY, || {
+            let patch = Patch::from_diff(self.diff.as_ref(), self.n)?;
+            match patch {
+                Some(p) => Ok::<Option<RcPatch>, Error>(Some(Rc::new(p))),
+                None => Ok(None),
+            }
+        })?;
+
+        Ok(data.as_ref().map(Rc::clone))
     }
 }
 
