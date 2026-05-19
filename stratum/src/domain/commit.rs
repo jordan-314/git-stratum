@@ -194,7 +194,6 @@ impl<'repo> Commit<'repo> {
 
     /// Return the git diff for the current commit within the context of a
     /// repository.
-    //TODO: https://github.com/segfault-merchant/git-stratum/issues/32
     fn diff(&self) -> Result<RcDiff<'repo>, Error> {
         let mut guard = self.diff_cache.lock().map_err(|_| Error::PoisonedCache)?;
         let data = guard.try_get_or_insert(CACHE_KEY, || self.calculate_diff())?;
@@ -276,19 +275,6 @@ impl<'repo> Commit<'repo> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{Local, Repository, common::init_repo};
-
-    fn commit_fixture<F, R>(f: F) -> R
-    where
-        F: FnOnce(&Repository<Local>, &Commit) -> R,
-    {
-        let repo = init_repo();
-
-        let repo = Repository::<Local>::from_repository(repo);
-        let commit = repo.head().expect("Failed to get HEAD");
-
-        f(&repo, &commit)
-    }
 
     #[test]
     fn test_iter_matches() {
